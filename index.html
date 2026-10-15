@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Arrow Research colour studies</title>
+<style>
+  :root {
+    --page: #ece8e0; --ink: #16120f; --muted: #5d574f; --card: #fff; --line: #d9d3c8;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink);
+         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1080px; margin: 0 auto; padding: 56px 16px 72px; }
+  h1 { font-weight: 400; font-size: clamp(28px, 4vw, 40px); line-height: 1.15; margin: 0 0 12px; letter-spacing: -0.01em; }
+  p.lede { color: var(--muted); max-width: 640px; margin: 0 0 40px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+  a.card { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+           overflow: hidden; color: inherit; text-decoration: none; transition: transform .2s, box-shadow .2s; }
+  a.card:hover { transform: translateY(-2px); box-shadow: 0 16px 40px -18px rgba(0,0,0,.35); }
+  a.card img { display: block; width: 100%; height: auto; aspect-ratio: 960 / 667; object-fit: cover; }
+  .body { padding: 18px 20px 20px; }
+  h2 { font-weight: 500; font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 14px; }
+  .swatches { display: flex; gap: 6px; }
+  .swatches span { flex: 1; height: 28px; border-radius: 6px; border: 1px solid rgba(0,0,0,.08); }
+  .open { margin-top: 16px; font-size: 14px; font-weight: 500; }
+  footer { margin-top: 40px; color: var(--muted); font-size: 13px; max-width: 720px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Arrow Research: two colour studies</h1>
+  <p class="lede">Recoloured copies of the Common Mechanics website mockup. Layout, type, copy and
+    imagery are unchanged. Only the palette is swapped, including tints, gradients, hover states,
+    SVG fills and the animated hero.</p>
+
+  <div class="grid">
+    <a class="card" href="orange/">
+      <img src="previews/orange.jpg" alt="Home page in burnt orange and beige">
+      <div class="body">
+        <h2>Burnt orange + beige</h2>
+        <p class="sub">Purple becomes burnt orange and rust; the beige stays.</p>
+        <div class="swatches" aria-hidden="true">
+          <span style="background:#1C130E"></span><span style="background:#5A1D04"></span>
+          <span style="background:#A8460F"></span><span style="background:#E9A273"></span>
+          <span style="background:#F8F3EB"></span>
+        </div>
+        <div class="open">Open the site →</div>
+      </div>
+    </a>
+    <a class="card" href="green/">
+      <img src="previews/green.jpg" alt="Home page in forest green and khaki">
+      <div class="body">
+        <h2>Forest green + khaki</h2>
+        <p class="sub">Purple becomes forest green; the beige shifts to khaki.</p>
+        <div class="swatches" aria-hidden="true">
+          <span style="background:#0E1711"></span><span style="background:#12301D"></span>
+          <span style="background:#2A5A35"></span><span style="background:#9DBE8E"></span>
+          <span style="background:#F3EFDD"></span>
+        </div>
+        <div class="open">Open the site →</div>
+      </div>
+    </a>
+  </div>
+
+  <footer>A static copy for comparing colours. It is not the live site, and some links
+    (Paper, LessWrong, LinkedIn, email) still point to their original destinations.</footer>
+</main>
+</body>
+</html>
