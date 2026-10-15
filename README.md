@@ -6,3 +6,4 @@ published for comparing palettes. Only colours differ from the mockup. This is n
 - Burnt orange + beige: https://tbuckworth.github.io/arrow-palettes/orange/
 - Forest green + khaki: https://tbuckworth.github.io/arrow-palettes/green/
 - Dark blue + beige: https://tbuckworth.github.io/arrow-palettes/blue/
+- Pick your own (main colour + background, live): https://tbuckworth.github.io/arrow-palettes/custom/
