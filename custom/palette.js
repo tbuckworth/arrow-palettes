@@ -27,18 +27,37 @@
     ["Navy", "1f4e99"], ["Teal", "0f6670"], ["Slate", "3d4a5c"],
   ];
   // Each background is the colour that replaces the original page beige
-  // (#f8f3eb); the stone/umber tones follow it. "main" tints it with the main hue.
+  // (#f8f3eb); the stone/umber tones follow it. A number instead of a hex tints
+  // the page with the main colour's hue at that OKLCH chroma. Any other hex can
+  // be chosen with the panel's background picker (state.bg is then the hex).
   var BG_PRESETS = [
-    ["original", "Beige (original)", null],
-    ["warm-grey", "Warm grey", "f3f2ef"],
-    ["grey", "Neutral grey", "f3f3f3"],
-    ["cool-grey", "Cool grey", "f0f2f5"],
-    ["greige", "Greige", "efebe5"],
-    ["stone", "Stone", "e9e4dc"],
-    ["taupe", "Taupe", "e7e0d7"],
-    ["mushroom", "Mushroom", "e1d9ce"],
-    ["kraft", "Kraft brown", "e3d5c3"],
-    ["tinted", "Tinted from main colour", "main"],
+    ["original", "Beige (original)", null, ""],
+    ["white", "White", "ffffff", "Whites and greys"],
+    ["paper", "Paper white", "fafaf8", "Whites and greys"],
+    ["warm-grey", "Warm grey", "f3f2ef", "Whites and greys"],
+    ["grey", "Neutral grey", "f3f3f3", "Whites and greys"],
+    ["cool-grey", "Cool grey", "f0f2f5", "Whites and greys"],
+    ["dove", "Dove grey", "e8e8e6", "Whites and greys"],
+    ["silver", "Silver", "e4e5e7", "Whites and greys"],
+    ["pebble", "Pebble", "dcdcd9", "Whites and greys"],
+    ["ivory", "Ivory", "fbf8ef", "Creams and browns"],
+    ["cream", "Cream", "f6f0e1", "Creams and browns"],
+    ["linen", "Linen", "f2ece2", "Creams and browns"],
+    ["greige", "Greige", "efebe5", "Creams and browns"],
+    ["oat", "Oatmeal", "ede6d9", "Creams and browns"],
+    ["stone", "Stone", "e9e4dc", "Creams and browns"],
+    ["sand", "Sand", "ebe2d1", "Creams and browns"],
+    ["taupe", "Taupe", "e7e0d7", "Creams and browns"],
+    ["mushroom", "Mushroom", "e1d9ce", "Creams and browns"],
+    ["kraft", "Kraft brown", "e3d5c3", "Creams and browns"],
+    ["biscuit", "Biscuit", "dfd0b8", "Creams and browns"],
+    ["tan", "Tan", "d8c7ae", "Creams and browns"],
+    ["khaki", "Khaki", "f1eedc", "Soft tints"],
+    ["sage", "Sage", "e7ebe0", "Soft tints"],
+    ["mist", "Mist blue", "e8eef2", "Soft tints"],
+    ["fog", "Fog", "e5e9ec", "Soft tints"],
+    ["tinted", "Tinted from main colour", 0.012, "From the main colour"],
+    ["tinted-strong", "Tinted from main colour, stronger", 0.03, "From the main colour"],
   ];
 
   // --- colour maths: sRGB <-> OKLab/OKLCH ------------------------------------
@@ -114,12 +133,15 @@
     return out;
   }
 
+  function presetFor(id) { return BG_PRESETS.filter(function (p) { return p[0] === id; })[0]; }
+
   function deriveBackground(id, main) {
-    var preset = BG_PRESETS.filter(function (p) { return p[0] === id; })[0] || BG_PRESETS[0];
+    var value = validHex(id) || (presetFor(id) || BG_PRESETS[0])[2];
     var out = {};
-    if (!preset[2]) { BACKGROUND.forEach(function (k) { out[k] = k; }); return out; }
+    if (!value) { BACKGROUND.forEach(function (k) { out[k] = k; }); return out; }
     var page = ORIG[PAGE];
-    var target = preset[2] === "main" ? [page[0], 0.012, hexToOklch(main)[2]] : hexToOklch(preset[2]);
+    var tint = typeof value === "number";
+    var target = tint ? [page[0], value, hexToOklch(main)[2]] : hexToOklch(value);
     // the other tones keep their lightness offset, chroma ratio and hue offset
     // from the page colour (umber, a dark overlay tint, keeps its lightness)
     BACKGROUND.forEach(function (k) {
@@ -128,7 +150,7 @@
       var C = Math.min(0.08, o[1] * target[1] / page[1]);
       out[k] = oklchToHex(L, C, o[2] + target[2] - page[2]);
     });
-    if (preset[2] !== "main") out[PAGE] = preset[2];
+    if (!tint) out[PAGE] = value;
     return out;
   }
 
@@ -170,7 +192,10 @@
 
   // --- state: ?main=&bg= in the URL, else localStorage, else the original ------------
   function validHex(h) { return typeof h === "string" && /^[0-9a-f]{6}$/i.test(h) ? h.toLowerCase() : null; }
-  function validBg(id) { return BG_PRESETS.some(function (p) { return p[0] === id; }) ? id : null; }
+  function validBg(id) {
+    if (typeof id !== "string") return null;
+    return presetFor(id) ? id : validHex(id.replace("#", ""));
+  }
   function load() {
     var state = { main: DEFAULT.main, bg: DEFAULT.bg };
     try {
@@ -211,9 +236,9 @@
     "h3{margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#555}",
     "section+section{margin-top:16px;padding-top:14px;border-top:1px solid #eee}",
     ".row{display:flex;align-items:center;gap:10px}",
-    "input[type=color]{width:44px;height:44px;padding:0;border:1px solid #ccc;border-radius:10px;background:none;cursor:pointer}",
+    "input[type=color]{flex:none;width:44px;height:44px;padding:0;border:1px solid #ccc;border-radius:10px;background:none;cursor:pointer}",
     "input[type=color]::-webkit-color-swatch-wrapper{padding:3px}input[type=color]::-webkit-color-swatch{border:none;border-radius:7px}",
-    ".hex{flex:1;height:36px;padding:0 10px;border:1px solid #ccc;border-radius:8px;font:500 14px ui-monospace,Menlo,monospace;color:#111}",
+    ".hex{flex:1;min-width:0;height:36px;padding:0 10px;border:1px solid #ccc;border-radius:8px;font:500 14px ui-monospace,Menlo,monospace;color:#111}",
     ".slider{display:grid;grid-template-columns:14px 1fr 34px;align-items:center;gap:8px;margin-top:8px}",
     ".slider b{font-size:12px;color:#444}.slider output{font:12px ui-monospace,Menlo,monospace;text-align:right;color:#333}",
     "input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:12px;border-radius:6px;margin:0;cursor:pointer}",
@@ -222,6 +247,10 @@
     ".presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}",
     ".presets button{width:26px;height:26px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25);cursor:pointer;padding:0}",
     ".presets button[aria-pressed=true]{box-shadow:0 0 0 2px #111}",
+    ".bg-swatches{gap:5px}.bg-swatches i{flex-basis:100%;height:0}.bg-swatches button{width:20px;height:20px;border-radius:6px;border:1px solid rgba(0,0,0,.18);box-shadow:none}",
+    ".bg-swatches button[aria-pressed=true]{box-shadow:0 0 0 2px #fff,0 0 0 4px #111}",
+    ".row+.row,.bg-swatches+.row{margin-top:10px}.row .label{flex:0 0 auto;color:#555}",
+    ".row input.small[type=color]{width:36px;height:36px;border-radius:8px}",
     "select{width:100%;height:36px;padding:0 8px;border:1px solid #ccc;border-radius:8px;background:#fff;font-size:14px;color:#111}",
     ".strip{display:grid;grid-template-columns:repeat(15,1fr);height:28px;border-radius:6px;overflow:hidden;border:1px solid rgba(0,0,0,.1)}",
     ".strip span{display:block}",
@@ -245,7 +274,12 @@
       '<div class="row"><input type="color" aria-label="Pick main colour">' +
       '<input class="hex" maxlength="7" spellcheck="false" aria-label="Hex code"></div>' + sliders +
       '<div class="presets"></div><div class="note contrast"></div></section>' +
-      "<section><h3>Background</h3><select></select></section>" +
+      "<section><h3>Background</h3><select></select>" +
+      '<div class="presets bg-swatches"></div>' +
+      '<div class="row"><span class="label">Or any colour</span>' +
+      '<input type="color" class="small bg-picker" aria-label="Pick background colour">' +
+      '<input class="hex bg-hex" maxlength="7" spellcheck="false" aria-label="Background hex code"></div>' +
+      '<div class="note bg-contrast"></div></section>' +
       '<section><h3>Derived palette</h3><div class="strip"></div>' +
       '<div class="note">Everything else is derived from the main colour.</div></section>' +
       '<section class="actions"><button class="reset">Reset</button><button class="primary copy">Copy link</button></section>' +
@@ -255,10 +289,24 @@
     var toggle = $(".toggle"), panel = $(".panel"), picker = $("input[type=color]"), hex = $(".hex");
     var ranges = Array.prototype.slice.call(root.querySelectorAll("input[type=range]"));
     var select = $("select"), strip = $(".strip"), presets = $(".presets");
+    var bgSwatches = $(".bg-swatches"), bgPicker = $(".bg-picker"), bgHex = $(".bg-hex");
 
+    var groups = {};
     BG_PRESETS.forEach(function (p) {
-      var o = document.createElement("option"); o.value = p[0]; o.textContent = p[1]; select.appendChild(o);
+      var o = document.createElement("option"); o.value = p[0]; o.textContent = p[1];
+      if (p[3] && !groups[p[3]]) {
+        groups[p[3]] = document.createElement("optgroup"); groups[p[3]].label = p[3]; select.appendChild(groups[p[3]]);
+      }
+      (groups[p[3]] || select).appendChild(o);
+      var b = document.createElement("button");
+      b.title = p[1]; b.setAttribute("aria-label", p[1]); b.dataset.bg = p[0];
+      b.addEventListener("click", function () { set({ bg: p[0] }); });
+      if (p[0] === "ivory" || p[0] === "khaki") bgSwatches.appendChild(document.createElement("i"));
+      bgSwatches.appendChild(b);
     });
+    var customOpt = document.createElement("option");
+    customOpt.value = "custom"; customOpt.textContent = "Custom colour";
+    select.appendChild(customOpt);
     MAIN_PRESETS.forEach(function (p) {
       var b = document.createElement("button");
       b.title = p[0]; b.setAttribute("aria-label", p[0]); b.style.background = "#" + p[1]; b.dataset.hex = p[1];
@@ -277,10 +325,22 @@
         r.style.background = "linear-gradient(to right,#" + rgbToHex(lo) + ",#" + rgbToHex(hi) + ")";
         r.nextElementSibling.textContent = rgb[i];
       });
-      select.value = state.bg;
+      var custom = !presetFor(state.bg);
+      select.value = custom ? "custom" : state.bg;
+      bgPicker.value = "#" + current[PAGE];
+      if (root.activeElement !== bgHex) bgHex.value = "#" + current[PAGE].toUpperCase();
       Array.prototype.forEach.call(presets.children, function (b) {
         b.setAttribute("aria-pressed", String(b.dataset.hex === state.main));
       });
+      Array.prototype.forEach.call(bgSwatches.querySelectorAll("button"), function (b) {
+        b.style.background = "#" + deriveBackground(b.dataset.bg, state.main)[PAGE];
+        b.setAttribute("aria-pressed", String(b.dataset.bg === state.bg));
+      });
+      var t = contrast(current[INK], current[PAGE]);
+      var bgNote = $(".bg-contrast");
+      bgNote.textContent = "Body text on this background: " + t.toFixed(1) + ":1" +
+        (t >= 4.5 ? "" : " (too low to read comfortably)");
+      bgNote.className = "note bg-contrast" + (t < 4.5 ? " warn" : "");
       strip.innerHTML = BRAND.concat(BACKGROUND).map(function (k) {
         return '<span title="#' + current[k].toUpperCase() + '" style="background:#' + current[k] + '"></span>';
       }).join("");
@@ -313,7 +373,16 @@
         var rgb = hexToRgb(state.main); rgb[+r.dataset.ch] = +r.value; set({ main: rgbToHex(rgb) });
       });
     });
-    select.addEventListener("change", function () { set({ bg: select.value }); });
+    // "Custom colour" starts from the background currently shown
+    select.addEventListener("change", function () {
+      set({ bg: select.value === "custom" ? current[PAGE] : select.value });
+    });
+    bgPicker.addEventListener("input", function () { set({ bg: bgPicker.value.slice(1).toLowerCase() }); });
+    bgHex.addEventListener("input", function () {
+      var v = validHex(bgHex.value.trim().replace("#", ""));
+      if (v) set({ bg: v });
+    });
+    bgHex.addEventListener("blur", render);
     $(".reset").addEventListener("click", function () { set({ main: DEFAULT.main, bg: DEFAULT.bg }); });
     $(".copy").addEventListener("click", function () {
       var btn = this, url = shareUrl(state);
