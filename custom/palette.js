@@ -20,7 +20,7 @@
   var BACKGROUND = ["f8f3eb", "e5decf", "c4beb3", "3a2e22"];
   var PAGE = "f8f3eb";
   var UMBER = "3a2e22";
-  var DEFAULT = { main: PRIMARY, bg: "original" };
+  var DEFAULT = { main: PRIMARY, bg: "original", hero: "original" };
 
   var MAIN_PRESETS = [
     ["Original purple", "3820a9"], ["Burnt orange", "a8460f"], ["Forest green", "2a5a35"],
@@ -58,6 +58,15 @@
     ["fog", "Fog", "e5e9ec", "Soft tints"],
     ["tinted", "Tinted from main colour", 0.012, "From the main colour"],
     ["tinted-strong", "Tinted from main colour, stronger", 0.03, "From the main colour"],
+  ];
+
+  // Home page hero: the site's own animation, or theme/hero.js's tiled logo with
+  // ripples of light (ids are the modes hero.js draws).
+  var HERO_MODES = [
+    ["original", "Original animation"],
+    ["ripple", "Logo grid: ripples from the centre"],
+    ["sweep", "Logo grid: diagonal sweep"],
+    ["drops", "Logo grid: raindrops"],
   ];
 
   // --- colour maths: sRGB <-> OKLab/OKLCH ------------------------------------
@@ -196,16 +205,19 @@
     if (typeof id !== "string") return null;
     return presetFor(id) ? id : validHex(id.replace("#", ""));
   }
+  function validHero(id) { return HERO_MODES.some(function (m) { return m[0] === id; }) ? id : null; }
   function load() {
-    var state = { main: DEFAULT.main, bg: DEFAULT.bg };
+    var state = { main: DEFAULT.main, bg: DEFAULT.bg, hero: DEFAULT.hero };
     try {
       var saved = JSON.parse(localStorage.getItem("arrow-palette") || "{}");
       state.main = validHex(saved.main) || state.main;
       state.bg = validBg(saved.bg) || state.bg;
+      state.hero = validHero(saved.hero) || state.hero;
     } catch (e) { /* storage unavailable: use defaults */ }
     var q = new URLSearchParams(location.search);
     state.main = validHex((q.get("main") || "").replace("#", "")) || state.main;
     state.bg = validBg(q.get("bg")) || state.bg;
+    state.hero = validHero(q.get("hero")) || state.hero;
     return state;
   }
   function save(state) {
@@ -215,6 +227,7 @@
     var u = new URL(location.href);
     u.searchParams.set("main", state.main);
     u.searchParams.set("bg", state.bg);
+    u.searchParams.set("hero", state.hero);
     return u.toString();
   }
 
@@ -274,21 +287,23 @@
       '<div class="row"><input type="color" aria-label="Pick main colour">' +
       '<input class="hex" maxlength="7" spellcheck="false" aria-label="Hex code"></div>' + sliders +
       '<div class="presets"></div><div class="note contrast"></div></section>' +
-      "<section><h3>Background</h3><select></select>" +
+      '<section><h3>Background</h3><select class="bg"></select>' +
       '<div class="presets bg-swatches"></div>' +
       '<div class="row"><span class="label">Or any colour</span>' +
       '<input type="color" class="small bg-picker" aria-label="Pick background colour">' +
       '<input class="hex bg-hex" maxlength="7" spellcheck="false" aria-label="Background hex code"></div>' +
       '<div class="note bg-contrast"></div></section>' +
+      '<section><h3>Hero animation</h3><select class="hero"></select>' +
+      '<div class="note">On the home page. Click the panel to start a ripple.</div></section>' +
       '<section><h3>Derived palette</h3><div class="strip"></div>' +
       '<div class="note">Everything else is derived from the main colour.</div></section>' +
-      '<section class="actions"><button class="reset">Reset</button><button class="primary copy">Copy link</button></section>' +
+      '<section class="actions"><button class="reset">Reset colours</button><button class="primary copy">Copy link</button></section>' +
       "</div>";
 
     var $ = function (sel) { return root.querySelector(sel); };
     var toggle = $(".toggle"), panel = $(".panel"), picker = $("input[type=color]"), hex = $(".hex");
     var ranges = Array.prototype.slice.call(root.querySelectorAll("input[type=range]"));
-    var select = $("select"), strip = $(".strip"), presets = $(".presets");
+    var select = $("select.bg"), heroSelect = $("select.hero"), strip = $(".strip"), presets = $(".presets");
     var bgSwatches = $(".bg-swatches"), bgPicker = $(".bg-picker"), bgHex = $(".bg-hex");
 
     var groups = {};
@@ -303,6 +318,9 @@
       b.addEventListener("click", function () { set({ bg: p[0] }); });
       if (p[0] === "ivory" || p[0] === "khaki") bgSwatches.appendChild(document.createElement("i"));
       bgSwatches.appendChild(b);
+    });
+    HERO_MODES.forEach(function (m) {
+      var o = document.createElement("option"); o.value = m[0]; o.textContent = m[1]; heroSelect.appendChild(o);
     });
     var customOpt = document.createElement("option");
     customOpt.value = "custom"; customOpt.textContent = "Custom colour";
@@ -325,6 +343,7 @@
         r.style.background = "linear-gradient(to right,#" + rgbToHex(lo) + ",#" + rgbToHex(hi) + ")";
         r.nextElementSibling.textContent = rgb[i];
       });
+      heroSelect.value = state.hero;
       var custom = !presetFor(state.bg);
       select.value = custom ? "custom" : state.bg;
       bgPicker.value = "#" + current[PAGE];
@@ -383,6 +402,7 @@
       if (v) set({ bg: v });
     });
     bgHex.addEventListener("blur", render);
+    heroSelect.addEventListener("change", function () { set({ hero: heroSelect.value }); });
     $(".reset").addEventListener("click", function () { set({ main: DEFAULT.main, bg: DEFAULT.bg }); });
     $(".copy").addEventListener("click", function () {
       var btn = this, url = shareUrl(state);
