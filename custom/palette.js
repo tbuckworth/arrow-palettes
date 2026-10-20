@@ -66,6 +66,7 @@
     ["original", "Original animation"],
     ["ripple", "Logo grid: ripples from the centre"],
     ["sweep", "Logo grid: diagonal sweep"],
+    ["arrow", "Logo grid: arrow sweeping right"],
     ["drops", "Logo grid: raindrops"],
   ];
 

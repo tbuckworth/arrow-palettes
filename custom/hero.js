@@ -110,6 +110,8 @@
     return 1 - (1 - main) * (1 - 0.45 * echo);
   }
   function hash(n) { var s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
+  // distance of a logo from a point, which makes circular ripples
+  function from(x, y) { return function (L) { return Math.hypot(L.x - x, L.y - y); }; }
 
   // brightness 0..1 of every logo at time t (seconds)
   function field(t) {
@@ -121,35 +123,43 @@
       // rings from the centre, one every 3.2 s
       var P = 3.2, v = diag * 0.55 / 3.4, life = (diag * 0.55 + trail) / v;
       for (var k = Math.floor(t / P); k * P > t - life; k--) {
-        sources.push({ x: W / 2, y: H / 2, r: v * (t - k * P), amp: 1, plane: null });
+        sources.push({ dist: from(W / 2, H / 2), r: v * (t - k * P), amp: 1 });
       }
     } else if (mode === "sweep") {
       // a straight band crossing the panel diagonally, one every 3.2 s
       var P2 = 3.2, dir = [Math.cos(0.5), Math.sin(0.5)], span = W * dir[0] + H * dir[1];
       var v2 = (span + tail * 2) / 3.6;
+      var along = function (L) { return L.x * dir[0] + L.y * dir[1]; };
       for (var k2 = Math.floor(t / P2); k2 * P2 > t - (span + tail + trail) / v2; k2--) {
-        sources.push({ plane: dir, r: v2 * (t - k2 * P2) - tail, amp: 1 });
+        sources.push({ dist: along, r: v2 * (t - k2 * P2) - tail, amp: 1 });
+      }
+    } else if (mode === "arrow") {
+      // a chevron pointing right (arms at 90 degrees) moving left to right, one
+      // every 3.2 s; its echo follows as a second, fainter chevron
+      var P4 = 3.2, cy = H / 2, span4 = (W + H / 2) * Math.SQRT1_2, v4 = (span4 + tail * 2) / 3.6;
+      var chevron = function (L) { return (L.x + Math.abs(L.y - cy)) * Math.SQRT1_2; };
+      for (var k4 = Math.floor(t / P4); k4 * P4 > t - (span4 + tail + trail) / v4; k4--) {
+        sources.push({ dist: chevron, r: v4 * (t - k4 * P4) - tail, amp: 1 });
       }
     } else if (mode === "drops") {
       // rings from scattered points, a new one every 0.9 s, fading as they spread
       var P3 = 0.9, rmax = diag * 0.35, v3 = rmax / 2.6;
       for (var k3 = Math.floor(t / P3); k3 * P3 > t - 2.6; k3--) {
         var age = t - k3 * P3;
-        sources.push({ x: hash(k3) * W, y: hash(k3 + 0.5) * H, r: v3 * age, amp: 1 - age / 2.6 });
+        sources.push({ dist: from(hash(k3) * W, hash(k3 + 0.5) * H), r: v3 * age, amp: 1 - age / 2.6 });
       }
     }
     // clicks/taps on the panel start a ring there too
     drops = drops.filter(function (d) { return t - d.t < 2.6; });
     drops.forEach(function (d) {
-      var age = t - d.t; sources.push({ x: d.x, y: d.y, r: diag * 0.4 / 2.6 * age, amp: 1 - age / 2.6 });
+      var age = t - d.t; sources.push({ dist: from(d.x, d.y), r: diag * 0.4 / 2.6 * age, amp: 1 - age / 2.6 });
     });
 
     for (var i = 0; i < logos.length; i++) {
       var L = logos[i], dark = 1;
       for (var j = 0; j < sources.length; j++) {
         var s = sources[j];
-        var d = s.plane ? L.x * s.plane[0] + L.y * s.plane[1] : Math.hypot(L.x - s.x, L.y - s.y);
-        dark *= 1 - s.amp * ring(d, s.r, lead, tail);   // overlapping rings add like light
+        dark *= 1 - s.amp * ring(s.dist(L), s.r, lead, tail);   // overlapping rings add like light
       }
       var twinkle = 0.05 * (1 + Math.sin(t * L.rate + L.phase));
       out[i] = Math.min(1, 1 - dark + twinkle);
