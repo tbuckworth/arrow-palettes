@@ -20,7 +20,7 @@
   var BACKGROUND = ["f8f3eb", "e5decf", "c4beb3", "3a2e22"];
   var PAGE = "f8f3eb";
   var UMBER = "3a2e22";
-  var DEFAULT = { main: PRIMARY, bg: "original", hero: "original" };
+  var DEFAULT = { main: PRIMARY, bg: "original", hero: "original", plot: "chart" };
 
   var MAIN_PRESETS = [
     ["Original purple", "3820a9"], ["Burnt orange", "a8460f"], ["Forest green", "2a5a35"],
@@ -68,6 +68,12 @@
     ["sweep", "Logo grid: diagonal sweep"],
     ["arrow", "Logo grid: arrow sweeping right"],
     ["drops", "Logo grid: raindrops"],
+  ];
+  // Home page research card: theme/plot.js's chart drawn in the site's colours,
+  // or the post's original figure as an image
+  var PLOT_MODES = [
+    ["chart", "Drawn in the site's colours"],
+    ["original", "Original image"],
   ];
 
   // --- colour maths: sRGB <-> OKLab/OKLCH ------------------------------------
@@ -207,18 +213,21 @@
     return presetFor(id) ? id : validHex(id.replace("#", ""));
   }
   function validHero(id) { return HERO_MODES.some(function (m) { return m[0] === id; }) ? id : null; }
+  function validPlot(id) { return PLOT_MODES.some(function (m) { return m[0] === id; }) ? id : null; }
   function load() {
-    var state = { main: DEFAULT.main, bg: DEFAULT.bg, hero: DEFAULT.hero };
+    var state = { main: DEFAULT.main, bg: DEFAULT.bg, hero: DEFAULT.hero, plot: DEFAULT.plot };
     try {
       var saved = JSON.parse(localStorage.getItem("arrow-palette") || "{}");
       state.main = validHex(saved.main) || state.main;
       state.bg = validBg(saved.bg) || state.bg;
       state.hero = validHero(saved.hero) || state.hero;
+      state.plot = validPlot(saved.plot) || state.plot;
     } catch (e) { /* storage unavailable: use defaults */ }
     var q = new URLSearchParams(location.search);
     state.main = validHex((q.get("main") || "").replace("#", "")) || state.main;
     state.bg = validBg(q.get("bg")) || state.bg;
     state.hero = validHero(q.get("hero")) || state.hero;
+    state.plot = validPlot(q.get("plot")) || state.plot;
     return state;
   }
   function save(state) {
@@ -229,6 +238,7 @@
     u.searchParams.set("main", state.main);
     u.searchParams.set("bg", state.bg);
     u.searchParams.set("hero", state.hero);
+    u.searchParams.set("plot", state.plot);
     return u.toString();
   }
 
@@ -296,6 +306,8 @@
       '<div class="note bg-contrast"></div></section>' +
       '<section><h3>Hero animation</h3><select class="hero"></select>' +
       '<div class="note">On the home page. Click the panel to start a ripple.</div></section>' +
+      '<section><h3>Research chart</h3><select class="plot"></select>' +
+      '<div class="note">The chart on the home page&#39;s research card. Hover it for details.</div></section>' +
       '<section><h3>Derived palette</h3><div class="strip"></div>' +
       '<div class="note">Everything else is derived from the main colour.</div></section>' +
       '<section class="actions"><button class="reset">Reset colours</button><button class="primary copy">Copy link</button></section>' +
@@ -304,7 +316,7 @@
     var $ = function (sel) { return root.querySelector(sel); };
     var toggle = $(".toggle"), panel = $(".panel"), picker = $("input[type=color]"), hex = $(".hex");
     var ranges = Array.prototype.slice.call(root.querySelectorAll("input[type=range]"));
-    var select = $("select.bg"), heroSelect = $("select.hero"), strip = $(".strip"), presets = $(".presets");
+    var select = $("select.bg"), heroSelect = $("select.hero"), plotSelect = $("select.plot"), strip = $(".strip"), presets = $(".presets");
     var bgSwatches = $(".bg-swatches"), bgPicker = $(".bg-picker"), bgHex = $(".bg-hex");
 
     var groups = {};
@@ -322,6 +334,9 @@
     });
     HERO_MODES.forEach(function (m) {
       var o = document.createElement("option"); o.value = m[0]; o.textContent = m[1]; heroSelect.appendChild(o);
+    });
+    PLOT_MODES.forEach(function (m) {
+      var o = document.createElement("option"); o.value = m[0]; o.textContent = m[1]; plotSelect.appendChild(o);
     });
     var customOpt = document.createElement("option");
     customOpt.value = "custom"; customOpt.textContent = "Custom colour";
@@ -345,6 +360,7 @@
         r.nextElementSibling.textContent = rgb[i];
       });
       heroSelect.value = state.hero;
+      plotSelect.value = state.plot;
       var custom = !presetFor(state.bg);
       select.value = custom ? "custom" : state.bg;
       bgPicker.value = "#" + current[PAGE];
@@ -404,6 +420,7 @@
     });
     bgHex.addEventListener("blur", render);
     heroSelect.addEventListener("change", function () { set({ hero: heroSelect.value }); });
+    plotSelect.addEventListener("change", function () { set({ plot: plotSelect.value }); });
     $(".reset").addEventListener("click", function () { set({ main: DEFAULT.main, bg: DEFAULT.bg }); });
     $(".copy").addEventListener("click", function () {
       var btn = this, url = shareUrl(state);
